@@ -1,1 +1,9 @@
+---
+title: "BST260 Final Project Proposal"
+author: "Yifei Wang"
+format: html
+---
+
+To: BST260 Teaching Team, Fall 2026
+
 
