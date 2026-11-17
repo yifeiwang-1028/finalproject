@@ -1,0 +1,42 @@
+---
+title: "Project"
+author: "Yifei Wang"
+format: html
+editor: visual
+---
+
+**To: BST260 Teaching Team, Fall 2026**
+
+For my final project, I plan to work with two kinds of public health data: measurements from individual survey participants and annual mortality summaries for states. I will use NHANES to study the relationship between BMI and systolic blood pressure, and CDC homicide data to examine geographic differences and changes over time. Each analysis will have its own research question and vignette.
+
+## 1. NHANES:
+
+**Research question:** Among U.S. adults aged 40 and older, how is BMI associated with systolic blood pressure after accounting for age, sex, race/ethnicity, education, smoking status, and survey cycle?
+
+I will use `NHANESraw` from the `NHANES` R package, which contains data from the 2009–2010 and 2011–2012 survey cycles. I chose this version because it retains the sampling weights, strata, and primary sampling unit identifiers. The unit of analysis will be one participant, and the target population will be civilian, noninstitutionalized U.S. adults aged 40 and older during that period. These dataset features are described in the [NHANES package documentation](https://cran.r-project.org/web/packages/NHANES/refman/NHANES.html). The package data have been adapted for educational purposes, which may limit the generalizability of the findings.
+
+The main exposure will be `BMI`, measured continuously in kg/m² and scaled so that the coefficient represents a five-unit increase. The outcome will be `BPSysAve`, a continuous measure of systolic blood pressure in mm Hg. Before examining the associations, I will specify age, sex, race/ethnicity (`Race1`), education, smoking status, and survey cycle as adjustment variables based on subject-matter reasoning. Age and sex may be related to both BMI and blood pressure, while education and race/ethnicity may reflect differences in social circumstances and healthcare access. Smoking may also confound the relationship between BMI and blood pressure. I will include survey cycle to account for differences between the two survey periods. Race/ethnicity will be treated as a social and demographic variable rather than a biological factor.
+
+I will code education, race/ethnicity, sex, and survey cycle as categorical variables. Smoking status will have three categories: never smokers (`Smoke100 == "No"`), former smokers (`Smoke100 == "Yes"` and `SmokeNow == "No"`), and current smokers (`Smoke100 == "Yes"` and `SmokeNow == "Yes"`). A skipped `SmokeNow` response for someone who never smoked will therefore not be counted as missing smoking status. Missing BMI and other unresolved or missing responses will remain missing. The primary model will use complete cases; I will report exclusions by variable and compare the observed characteristics of included and excluded participants to assess possible selection bias.
+
+I will use `dplyr` to clean and summarize the data, beginning with survey-weighted sample characteristics and summaries of BMI and blood pressure. I will use `ggplot2` to show their distributions and relationship. I will then fit a survey-weighted linear regression using `survey::svyglm`, allowing age to vary flexibly with a natural spline. Following [CDC guidance for combining survey cycles](https://wwwn.cdc.gov/nchs/nhanes/tutorials/weighting.aspx), I will use `WTMEC2YR / 2` with `SDMVSTRA` and `SDMVPSU`, and define the survey design before selecting the age subgroup. I will report the adjusted blood pressure difference per five BMI units with a 95% confidence interval. A BMI spline and a BMI-by-sex interaction will be secondary checks for nonlinearity and differences by sex. Interpretation will address the cross-sectional design, missing data, and unmeasured factors such as blood pressure medication use.
+
+## 2. CDC: Regional differences in homicide mortality
+
+**Research question:** How do age-adjusted homicide mortality rates differ across U.S. Census regions, and how have those differences changed from 2014 through 2024?
+
+I will use `cdcmurd`, available through `data(cdcmurd, package = "finalproject")`. Its original source is the [CDC/NCHS Homicide Mortality resource](https://www.cdc.gov/nchs/state-stats/deaths/homicide.html). The dataset includes annual state death counts and age-adjusted mortality rates per 100,000 people. I will focus on the continuous 2014–2024 series and document the source, extraction date, package version, and available years.
+
+The unit of analysis will be a state-year, representing residents of the 50 states. I will describe Washington, D.C., separately because its geographic and population structure differs from that of a state. The explanatory variables will be Census region, coded as Northeast, Midwest, South, or West, and calendar year, coded categorically. I will assign regions by joining R's state identifiers and `state.region` to the mortality data with `left_join()`. The outcome will be the continuous age-adjusted homicide death rate (`Death.Rate`); death counts will provide additional context.
+
+I will check state-year identifiers, numeric formats, and missing or unreliable rates against the original CDC records. In particular, I will investigate entries with a zero rate but a positive death count. Rates that CDC identifies as unavailable or unreliable will be coded as missing, with exclusions reported by state and year. I will preserve gaps in the figures so that unavailable data are visible.
+
+I will calculate annual state and regional summaries with `group_by()` and `summarise()`, then make regional trend plots and maps comparing 2014 and 2024 on the same color scale. For modeling, I will use the logarithm of valid positive mortality rates as the outcome, with region, categorical year, and their interaction as fixed effects. A state random intercept and an AR(1) residual structure in `nlme::lme` will account for repeated observations and correlation between adjacent years. I will examine residual diagnostics and report selected regional rate ratios with 95% confidence intervals. States will receive equal weight, so these comparisons will describe typical state rates rather than pooled regional population rates.
+
+Calendar year will be the prespecified adjustment factor for regional comparisons, and the published rates already adjust for age. State socioeconomic conditions and firearm exposure are not measured in this dataset, so I will interpret regional contrasts descriptively. I will also discuss small-count instability, missing rates, and the limits of drawing individual-level conclusions from state summaries.
+
+## 3. Organization and final product
+
+I will develop the project as a public R package named `finalproject`, using the course template. The pkgdown site will contain two analysis vignettes, `nhanes-blood-pressure.qmd` and `homicide-trends.qmd`. Each will document data provenance, variable definitions, descriptive statistics, methods, findings, uncertainty, and limitations. For both datasets, I will record the package version, original source, access or extraction date, and cleaning decisions.
+
+I will write reusable R functions for repeated summaries and plots across demographic groups, states, and years. The repository will include `project_plan.qmd`, documented analysis code, package dependencies, and a README explaining how to reproduce the work. I will update the package metadata and publish the site from `/docs` on the `main` branch, following the [2026 project instructions](https://vjcitn.github.io/bst260project-template/articles/instructions.html). The final discussion will return to the two research questions and identify which conclusions are supported by the data and which would require additional information.
